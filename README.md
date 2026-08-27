@@ -1,4 +1,3 @@
-```markdown
 # WPA Hunter
 
 Automated WPA/WPA2 security assessment workflow for Linux, built in Python.
@@ -281,7 +280,3 @@ The current version focuses on automating and documenting a practical Wi-Fi secu
 ## License
 
 License to be added. Recommended: MIT License.
-
-```
-
-```

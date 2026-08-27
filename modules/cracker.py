@@ -384,6 +384,19 @@ class AdvancedCracker(HandshakeCracker):
     def __init__(self, config):
         super().__init__(config)
         self.rule_files = self.find_rule_files()
+        # Dictionary of descriptions for Hashcat rules
+        self.rule_descriptions = {
+            "Incisive-leetspeak.rule": "Applies leetspeak transformations (e.g., e->3, a->@, s->$)",
+            "InsidePro-HashManager.rule": "Alteration rules, reversals, and case toggling (PasswordsPro)",
+            "InsidePro-PasswordsPro.rule": "Standard transformation set optimized for fast cracking",
+            "T0XlC-insert_00-99_1950-2050_toprules_0_F.rule": "Injects numbers 00-99 and years 1950-2050 (dates/birthyears)",
+            "T0XlC-insert_space_and_special_0_F.rule": "Inserts spaces and special characters/punctuation",
+            "T0XlC-insert_top_100_passwords_1_G.rule": "Pads words by inserting the top 100 most common passwords",
+            "T0XlC.rule": "Massive and aggressive set of advanced mutation rules",
+            "T0XlC_3_rule.rule": "Streamlined version focused on fast rule combinations",
+            "T0XlC_insert_HTML_entities_0_Z.rule": "Inserts HTML entities and web-derived special symbols",
+            "T0XlCv2.rule": "Updated and revised version with modern, effective patterns"
+        }
     
     def find_rule_files(self):
         """Find hashcat rule files"""
@@ -461,18 +474,20 @@ class AdvancedCracker(HandshakeCracker):
         console.print("\n[bold cyan][*] Handshake Statistics[/bold cyan]")
         
         try:
-            # Analyze with hcxpcapngtool
-            result = subprocess.run(
-                ['hcxpcapngtool', '--info', cap_file],
-                capture_output=True,
-                text=True
-            )
+            # Mostra le informazioni di base del file e la dimensione
+            file_size = os.path.getsize(cap_file) / 1024
+            hash_file = cap_file.replace('.cap', '.hc22000')
+            has_hash = os.path.exists(hash_file)
             
-            # Parse output
-            lines = result.stdout.split('\n')
-            for line in lines:
-                if 'PMKID' in line or 'EAPOL' in line or 'BEACON' in line:
-                    console.print(f"[dim]{line}[/dim]")
+            info_text = f"Capture File: {os.path.basename(cap_file)}\n" \
+                        f"Size: {file_size:.2f} KB\n" \
+                        f"Hashcat Format (.hc22000): {'Available' if has_hash else 'Not generated'}\n"
+            
+            if has_hash:
+                hash_size = os.path.getsize(hash_file)
+                info_text += f"Hash File Size: {hash_size} bytes\n"
+            
+            console.print(Panel(info_text, title="[cyan]Capture Summary[/cyan]", border_style="cyan"))
                     
         except Exception as e:
-            console.print(f"[dim]Could not parse statistics: {e}[/dim]")
+            console.print(f"[red][✗] Could not parse statistics: {e}[/red]")

@@ -23,7 +23,6 @@ from rich.panel import Panel
 from modules.scanner import WPAScanner
 from modules.cracker import HandshakeCracker, AdvancedCracker
 from modules.utils import clear_input_buffer, check_root, get_timestamp
-from modules.connection import *
 
 # Initialize Rich console
 console = Console()
@@ -70,16 +69,13 @@ def show_menu():
 ╠════════════════════════════════════════════════════════════════════╣
 ║  [1] New Attack - Capture WPA Handshake                            ║
 ║  [2] Crack Existing Handshake                                      ║
-║  [3] Connect to WiFi Network                                       ║
-║  [4] Show Current Connection                                       ║
-║  [5] Disconnect from Network                                       ║
-║  [6] Advanced Cracking Options                                     ║
-║  [7] Exit                                                          ║
+║  [3] Advanced Cracking Options                                     ║
+║  [4] Exit                                                          ║
 ╚════════════════════════════════════════════════════════════════════╝[/bold cyan]
 """
     console.print(menu_text)
     choice = Prompt.ask("[bold yellow]Select option[/bold yellow]", 
-                        choices=["1", "2", "3", "4", "5", "6", "7"], 
+                        choices=["1", "2", "3", "4"], 
                         default="1")
     return choice
 
@@ -120,107 +116,13 @@ def new_attack_mode(scanner, args):
             console.print("[bold green][✓] Handshake captured successfully![/bold green]")
             
             clear_input_buffer()
+            subprocess.run(['stty', 'sane'], capture_output=True)
             
             # Return to main menu without cracking
             console.print("\n[dim]Press Enter to return to main menu...[/dim]")
             input()
     
     return True
-
-def connect_to_wifi_mode(scanner, args):
-    """Connect to a WiFi network"""
-    global running
-    
-    console.print("\n[bold cyan]═══════════ Connect to WiFi Network ═══════════[/bold cyan]")
-    
-    # Import WiFiConnection here to avoid circular imports
-    from modules.connection import WiFiConnection
-    
-    # Setup interface
-    if not scanner.setup_interface(args.iface):
-        return False
-    
-    # Scan networks
-    networks = scanner.scan_networks(duration=30)
-    if not networks or not running:
-        return False
-    
-    # Select target
-    target = scanner.select_target(networks)
-    if not target:
-        return False
-    
-    # Setup interface in managed mode
-    interface = args.iface
-    if not interface:
-        interfaces = scanner.list_interfaces()
-        if not interfaces:
-            return False
-        iface_num = Prompt.ask("Select interface number", default="1")
-        try:
-            interface = interfaces[int(iface_num) - 1]
-        except (ValueError, IndexError):
-            console.print("[bold red][✗] Invalid selection[/bold red]")
-            return False
-    
-    # Initialize connection manager
-    conn = WiFiConnection()
-    
-    # Bring interface to managed mode
-    if not conn.set_managed_mode(interface):
-        return False
-    
-    # Extract network info
-    essid = target.get('ESSID', '')
-    bssid = target.get('BSSID', '')
-    encryption = target.get('Privacy', 'Unknown')
-    is_hidden = target.get('Hidden', False) or not essid or essid == 'Hidden' or essid == '<Hidden Network>'
-    
-    # If hidden network, try to reveal SSID first
-    if is_hidden:
-        console.print("\n[bold yellow][!] Hidden Network Detected![/bold yellow]")
-        console.print("[dim]Attempting to reveal SSID (this may take up to 45 seconds)...[/dim]")
-        
-        # Try to reveal hidden SSID
-        revealed_essid = scanner.reveal_hidden_ssid(bssid, interface)
-        
-        if revealed_essid:
-            essid = revealed_essid
-            console.print(f"[bold green][✓] SSID revealed: {essid}[/bold green]")
-        else:
-            console.print("[yellow][!] Could not automatically reveal SSID[/yellow]")
-            essid = Prompt.ask("Enter ESSID for hidden network manually", default="")
-            if not essid:
-                console.print("[red][✗] ESSID required for hidden network[/red]")
-                return False
-    
-    # Check if open network
-    is_open = 'OPEN' in encryption.upper() or 'None' in encryption or not encryption
-    
-    # Get password if needed
-    password = None
-    if not is_open:
-        password = Prompt.ask("Enter WiFi password", password=True)
-        if not password:
-            console.print("[red][✗] Password required for secure network[/red]")
-            return False
-    
-    # Connect using the connection manager
-    success = conn.connect_to_network(interface, bssid, essid, encryption, password)
-    
-    if success:
-        console.print("\n[bold green]Connected successfully![/bold green]")
-        console.print("[dim]You can now browse the internet through this connection[/dim]")
-    else:
-        console.print("\n[bold red]Connection failed![/bold red]")
-        console.print("[dim]Troubleshooting tips:[/dim]")
-        console.print("  - Verify the password is correct")
-        console.print("  - Check if you're in range of the AP")
-        console.print("  - Try disabling and re-enabling the interface")
-    
-    console.print("\n[dim]Press Enter to continue...[/dim]")
-    input()
-    return success
 
 def crack_existing_mode(scanner, args):
     """Crack an existing handshake capture"""
@@ -310,8 +212,12 @@ def advanced_cracking_mode(scanner, args):
         wordlist = Prompt.ask("Wordlist path", default=cracker.get_wordlist())
         if cracker.rule_files:
             console.print("\n[dim]Available rule files:[/dim]")
-            for idx, rule in enumerate(cracker.rule_files[:10], 1):
-                console.print(f"  {idx}. {os.path.basename(rule)}")
+            for idx, rule in enumerate(cracker.rule_files[:15], 1):
+                rule_name = os.path.basename(rule)
+                # Recupera la descrizione dal dizionario dell'oggetto cracker o usa un fallback
+                desc = cracker.rule_descriptions.get(rule_name, "Regola di mutazione standard")
+                console.print(f"  {idx}. [cyan]{rule_name}[/cyan] - [dim]{desc}[/dim]")
+                
             rule_choice = Prompt.ask("Select rule", default="1")
             try:
                 rules = cracker.rule_files[int(rule_choice) - 1]
@@ -381,7 +287,7 @@ def main():
         # Interactive menu
         while True:
             if args.advanced:
-                choice = "6"
+                choice = "3"
             else:
                 choice = show_menu()
             
@@ -404,22 +310,13 @@ def main():
                     break
                     
             elif choice == "3":
-                connect_to_wifi_mode(scanner, args)
-                
-            elif choice == "4":
-                show_connection_status(scanner, args)
-                
-            elif choice == "5":
-                disconnect_wifi(scanner, args)
-                
-            elif choice == "6":
                 console.print("\n[bold cyan]═══════════ Advanced Cracking Mode ═══════════[/bold cyan]")
                 advanced_cracking_mode(scanner, args)
                 
                 if not Confirm.ask("\nReturn to main menu?", default=True):
                     break
                     
-            elif choice == "7":
+            elif choice == "4":
                 console.print("\n[bold green]Goodbye![/bold green]")
                 break          
 

@@ -6,3 +6,5 @@ captures/
 
 modules/__pycache__/
 *.pyc
+
+cracked_passwords.txt

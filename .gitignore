@@ -1,0 +1,8 @@
+# Captures folder
+captures/
+*.cap
+*.pcap
+*.pcapng
+
+modules/__pycache__/
+*.pyc

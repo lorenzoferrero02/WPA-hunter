@@ -44,6 +44,7 @@ BANNER = """
 ╚███╔███╔╝██║     ██║  ██║      ██║  ██║╚██████╔╝██║ ╚████║   ██║   ███████╗██║  ██║
  ╚══╝╚══╝ ╚═╝     ╚═╝  ╚═╝      ╚═╝  ╚═╝ ╚═════╝ ╚═╝  ╚═══╝   ╚═╝   ╚══════╝╚═╝  ╚═╝
 [/bold cyan]
+[bold cyan]⚡ DEVELOPED BY: LORENZO FERRERO ~ github.com/lorenzoferrero02 ⚡[/bold cyan]
 [bold yellow]Automated WPA/WPA2 Security Assessment Tool v1.0[/bold yellow]
 [dim]For authorized security testing only[/dim]
 """

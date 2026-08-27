@@ -1,10 +1,25 @@
-# Captures folder
+cracked_passwords.txt
+
+# Python bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+venv/
+env/
+.venv/
+
+# Local configuration / IDEs
+.idea/
+.vscode/
+.DS_Store
+
+# Captures, keys and cracking results
 captures/
 *.cap
 *.pcap
 *.pcapng
-
-modules/__pycache__/
-*.pyc
-
-cracked_passwords.txt
+*.hc22000
+*.txt
+!requirements.txt

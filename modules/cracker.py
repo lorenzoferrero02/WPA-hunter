@@ -21,6 +21,7 @@ from rich.table import Table
 from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn
 from rich.prompt import Prompt, Confirm
 from rich.panel import Panel
+import re
 
 console = Console()
 

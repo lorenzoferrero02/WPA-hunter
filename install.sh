@@ -14,11 +14,21 @@ fi
 # Install system dependencies
 echo "[*] Installing system dependencies..."
 apt update
-apt install -y aircrack-ng tcpdump hcxtools hashcat wireless-tools python3-pip
+apt install -y aircrack-ng tcpdump hcxtools hashcat wireless-tools iw python3-pip
+
+if [ $? -ne 0 ]; then
+    echo "[✗] Failed to install system dependencies"
+    exit 1
+fi
 
 # Install Python dependencies
 echo "[*] Installing Python dependencies..."
 pip3 install -r requirements.txt
+
+if [ $? -ne 0 ]; then
+    echo "[✗] Failed to install Python dependencies"
+    exit 1
+fi
 
 # Make script executable
 chmod +x wpa-hunter.py

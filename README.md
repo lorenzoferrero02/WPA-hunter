@@ -133,7 +133,7 @@ pip3 install -r requirements.txt
 Clone the repository:
 
 ```bash
-git clone [https://github.com/lorenzoferrero02/WPA-hunter.git](https://github.com/lorenzoferrero02/WPA-hunter.git)
+git clone https://github.com/lorenzoferrero02/WPA-hunter.git
 cd WPA-hunter
 
 ```

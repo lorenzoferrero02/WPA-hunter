@@ -452,7 +452,7 @@ class AdvancedCracker(HandshakeCracker):
         cmd = [
             'hashcat', '-m', '22000', '-a', '3',
             self.hash_file, mask,
-            '--force', '--status', '--status-timer=1'
+            '--force', '--status', '--status-timer=1', '--potfile-path', '/tmp/hashcat.potfile'
         ]
         
         try:

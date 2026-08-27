@@ -306,13 +306,13 @@ class HandshakeCracker:
         """Display cracking results in a nice panel"""
         if self.cracked_password:
             result_text = f"""
-[bold green]╔══════════════════════════════════════════════════════════════╗
-║                     🔑 PASSWORD FOUND! 🔑                       ║
-╠══════════════════════════════════════════════════════════════════╣
-║  Password: [bold yellow]{self.cracked_password}[/bold yellow]
-║  Method: {self.cracking_method}
-║  File: {os.path.basename(self.cap_file)}
-╚══════════════════════════════════════════════════════════════════╝[/bold green]
+[bold green]
+╔══════════════════════════════════════════════════════════════════════════╗
+║                           🔑 PASSWORD FOUND! 🔑                          ║
+╚══════════════════════════════════════════════════════════════════════════╝
+  Password: [bold yellow]{self.cracked_password}[/bold yellow]            
+  Method: {self.cracking_method}                                          
+  File: {os.path.basename(self.cap_file)}    
 """
             console.print(result_text)
             self.save_results()

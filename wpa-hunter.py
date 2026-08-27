@@ -65,8 +65,9 @@ def signal_handler(sig, frame):
 def show_menu():
     """Display main menu"""
     menu_text = """
-[bold cyan]╔══════════════════════════════════════════════════════════════╗
-║                      MAIN MENU                                      ║
+[bold cyan]
+╔════════════════════════════════════════════════════════════════════╗
+║                           MAIN MENU                                ║
 ╠════════════════════════════════════════════════════════════════════╣
 ║  [1] New Attack - Capture WPA Handshake                            ║
 ║  [2] Crack Existing Handshake                                      ║

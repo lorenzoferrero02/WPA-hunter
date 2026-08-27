@@ -12,7 +12,7 @@ import subprocess
 import re
 import json
 import glob
-import configparser  # <--- AGGIUNGI QUESTO IMPORT
+import configparser 
 from datetime import datetime
 from pathlib import Path
 from rich.console import Console
@@ -331,7 +331,7 @@ class WPAScanner:
                 '--write', temp_file,
                 '--output-format', 'csv',
                 '--write-interval', '1',
-                '--showack',  # Mostra anche ACK frames
+                '--showack',
                 self.monitor_interface
             ]
             
@@ -431,7 +431,6 @@ class WPAScanner:
     def detect_hidden_networks(self, networks, temp_file):
         """Detect hidden networks from probe requests"""
         try:
-            # Cerca probe requests che rivelano SSID nascosti
             probe_file = temp_file + '-01.kismet.csv'
             if os.path.exists(probe_file):
                 with open(probe_file, 'r') as f:

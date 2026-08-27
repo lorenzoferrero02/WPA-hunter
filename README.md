@@ -256,6 +256,12 @@ This repository must not contain:
 
 Use responsibly.
 
+## Known Limitations
+
+- **Linux Only:** Relies heavily on Linux wireless tools (`iw`, `wireless-tools`, `tcpdump`) and network stack behavior.
+- **Hardware Dependent:** Requires a wireless network interface card (NIC) that natively supports both **monitor mode** and **packet injection**.
+- **Scope Limitation:** Designed specifically for WPA/WPA2-PSK network assessments in authorized lab environments.
+
 ## Roadmap
 
 Planned improvements:
@@ -279,4 +285,4 @@ The current version focuses on automating and documenting a practical Wi-Fi secu
 
 ## License
 
-License to be added. Recommended: MIT License.
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.

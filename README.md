@@ -46,21 +46,9 @@ The goal is to automate the repetitive parts of the workflow while making each s
 - Configurable scan time, capture timeout, deauth packets, and output directory
 
 ## Demo
+This is the demo, turn on the volume to enjoy :)
 
-Demo video/GIF coming soon.
-
-Suggested demo flow:
-
-```text
-sudo python3 wpa-hunter.py
-Select wireless interface
-Scan networks
-Select authorized test network
-Capture WPA handshake
-Validate capture
-Run password auditing workflow against the captured handshake
-
-```
+https://github.com/user-attachments/assets/e367b51d-942e-4453-9f6d-81e1366fa58f
 
 ## Architecture
 

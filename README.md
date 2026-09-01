@@ -129,6 +129,7 @@ cd WPA-hunter
 Install dependencies:
 
 ```bash
+chmod +x install.sh
 sudo ./install.sh
 
 ```

